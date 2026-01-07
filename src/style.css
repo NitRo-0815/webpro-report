@@ -1,0 +1,135 @@
+body {
+  font-family: 'Yu Gothic', 'Meiryo', sans-serif;
+  background: #f7f7f7;
+  margin: 0;
+  padding: 0;
+}
+
+.container {
+  max-width: 600px;
+  margin: 40px auto;
+  background: #fff;
+  border-radius: 8px;
+  padding: 24px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+h1 {
+  font-size: 2em;
+  margin-bottom: 16px;
+}
+
+.brand-list {
+  list-style: none;
+  padding: 0;
+}
+
+.brand-list li {
+  padding: 8px 0;
+  border-bottom: 1px solid #eee;
+}
+
+.questionnaire {
+  max-width: 980px;
+  margin: 40px auto;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  padding: 0 16px;
+}
+
+.question-card {
+  background: #fff;
+  border: 2px solid #222;
+  border-radius: 10px;
+  padding: 18px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+}
+
+.question-step {
+  font-size: 0.9em;
+  color: #666;
+  margin-bottom: 8px;
+}
+
+.question-title {
+  font-size: 1.4em;
+  font-weight: 700;
+  line-height: 1.4;
+}
+
+.question-nav {
+  margin-top: 12px;
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.nav-btn {
+  appearance: none;
+  border: 1px solid #ccc;
+  background: #fff;
+  padding: 10px 14px;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.nav-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.nav-btn.primary {
+  background: #111;
+  color: #fff;
+  border-color: #111;
+}
+
+.nav-btn.ghost {
+  background: transparent;
+}
+
+.answer-window {
+  background: #fff;
+  border-radius: 10px;
+  padding: 18px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+  min-height: 220px;
+}
+
+.answer-hint {
+  color: #666;
+  margin-bottom: 12px;
+}
+
+.options-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 10px;
+}
+
+.option-btn {
+  appearance: none;
+  text-align: left;
+  border: 2px solid #ddd;
+  background: #fafafa;
+  border-radius: 10px;
+  padding: 14px 14px;
+  cursor: pointer;
+  font-size: 1.05em;
+}
+
+.option-btn:hover {
+  border-color: #aaa;
+}
+
+.option-btn.selected {
+  border-color: #111;
+  background: #f0f0f0;
+}
+
+@media (max-width: 820px) {
+  .questionnaire {
+    grid-template-columns: 1fr;
+  }
+}
