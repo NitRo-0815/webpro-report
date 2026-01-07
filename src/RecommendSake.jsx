@@ -4,70 +4,7 @@ import RecommendResultList from "./RecommendResultList.jsx";
 import { buildBrandVectors } from "./utils/flavorVector.js";
 import { kmeans } from "./utils/kmeans.js";
 import { recommendAllFromCluster } from "./utils/recommend.js";
-
-async function safeFetchJson(path) {
-  const res = await fetch(path);
-  const ct = res.headers.get("content-type") || "";
-  if (!res.ok) {
-    throw new Error(`HTTP ${res.status} ${res.statusText} for ${path}`);
-  }
-
-  if (!ct.includes("application/json")) {
-    throw new Error(`Expected JSON but got '${ct}' for ${path}`);
-  }
-  return res.json();
-}
-
-// API一括取得
-async function fetchAllSakeData() {
-  const normalizeArray = (raw, key) => {
-    if (Array.isArray(raw)) return raw;
-
-    if (raw && typeof raw === "object" && key && Array.isArray(raw[key])) return raw[key];
-    return [];
-  };
-
-  const normalizeBrandFlavorTags = raw => {
-    const base = raw?.brandFlavorTags ?? raw;
-    if (Array.isArray(base)) return base;
-    if (!base || typeof base !== "object") return [];
-    if (Array.isArray(base.brandFlavorTags)) return base.brandFlavorTags;
-    if (base.brandId != null) return [base];
-
-    for (const v of Object.values(base)) {
-      if (Array.isArray(v)) return v;
-      if (v && typeof v === "object") {
-        for (const vv of Object.values(v)) {
-          if (Array.isArray(vv)) return vv;
-        }
-      }
-    }
-
-    // brandId -> tagId[] のような形で返るケースにも対応
-    return Object.entries(base)
-      .map(([brandId, tagIds]) => ({
-        brandId: Number(brandId),
-        tagIds: Array.isArray(tagIds) ? tagIds : [],
-      }))
-      .filter(x => Number.isFinite(x.brandId));
-  };
-
-  const [brandsJson, tagsJson, bfJson, breweriesJson, areasJson, flavorChartsJson] = await Promise.all([
-    safeFetchJson("/sakenowa-data/api/brands"),
-    safeFetchJson("/sakenowa-data/api/flavor-tags"),
-    safeFetchJson("/sakenowa-data/api/brand-flavor-tags"),
-    safeFetchJson("/sakenowa-data/api/breweries"),
-    safeFetchJson("/sakenowa-data/api/areas"),
-    safeFetchJson("/sakenowa-data/api/flavor-charts"),
-  ]);
-
-  const brands = normalizeArray(brandsJson, "brands");
-  const tags = normalizeArray(tagsJson, "tags");
-  const brandFlavorTags = normalizeBrandFlavorTags(bfJson);
-  const breweries = normalizeArray(breweriesJson, "breweries");
-  const areas = normalizeArray(areasJson, "areas");
-  return { brands, tags, brandFlavorTags, breweries, areas, flavorCharts: flavorChartsJson };
-}
+import { fetchAllSakeData } from "./utils/api.js";
 
 export default function RecommendSake() {
   const [step, setStep] = useState(1);
