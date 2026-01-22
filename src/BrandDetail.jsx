@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Link, useNavigate, useParams } from "react-router-dom";
+import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
 import { fetchAllSakeData } from "./utils/api.js";
 import DotRadarHexChart from "./DotRadarHexChart.jsx";
 import { buildBrandVectors } from "./utils/flavorVector.js";
@@ -9,6 +9,7 @@ import { loadUserPreferenceVector, subscribeUserPreferenceVector } from "./utils
 export default function BrandDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
   const [brand, setBrand] = useState(null);
   const [brewery, setBrewery] = useState(null);
   const [area, setArea] = useState(null);
@@ -18,7 +19,21 @@ export default function BrandDetail() {
   const [userVector, setUserVector] = useState(() => loadUserPreferenceVector() ?? initUserVector(6, 0.5));
 
   const goBackToList = () => {
-    navigate("/", { state: { restoreRecommend: true } });
+    let q = location?.state?.brandListQuery;
+    if (typeof q !== "string") {
+      try {
+        q = sessionStorage.getItem("brandListQuery") ?? "";
+      } catch {
+        q = "";
+      }
+    }
+
+    navigate("/brands", {
+      state: {
+        brandListQuery: q,
+        disableRouteFade: true,
+      },
+    });
   };
 
   useEffect(() => {

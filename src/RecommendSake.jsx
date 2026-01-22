@@ -1,8 +1,9 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { useLocation } from "react-router-dom";
 import MultiStepQuestionnaire from "./MultiStepQuestionnaire.jsx";
 import RecommendResultList from "./RecommendResultList.jsx";
 import Stage from "./Stage.jsx";
+import FadeOverlay from "./FadeOverlay.jsx";
 import { buildBrandVectors } from "./utils/flavorVector.js";
 import { kmeans } from "./utils/kmeans.js";
 import { recommendAllFromCluster, userVectorFromAnswers } from "./utils/recommend.js";
@@ -13,7 +14,7 @@ import { saveUserPreferenceVector } from "./utils/preferenceStorage.js";
 //   const brandById = new Map((Array.isArray(brands) ? brands : []).map(b => [String(b.id), b]));
 //   const header = ["id", "name", "cluster", "feat_0", "feat_1", "feat_2", "feat_3", "feat_4", "feat_5"].join(",");
 //   const lines = [header];
-//
+
 //   for (let i = 0; i < points.length; i++) {
 //     const p = points[i];
 //     const brand = brandById.get(String(p.id));
@@ -24,11 +25,11 @@ import { saveUserPreferenceVector } from "./utils/preferenceStorage.js";
 //       const n = Number(v[idx]);
 //       return Number.isFinite(n) ? String(n) : "";
 //     });
-//
+
 //     const esc = s => `"${String(s).replaceAll('"', '""')}"`;
 //     lines.push([esc(p.id), esc(name), String(cluster), ...feats].join(","));
 //   }
-//
+
 //   return lines.join("\n");
 // }
 
@@ -37,10 +38,14 @@ export default function RecommendSake() {
   const [step, setStep] = useState(1);
   const [answers, setAnswers] = useState({});
   const [results, setResults] = useState([]);
+
   const [allData, setAllData] = useState(null);
   const [clusterModel, setClusterModel] = useState(null);
   const [loadingData, setLoadingData] = useState(false);
   const [pendingRestoreScroll, setPendingRestoreScroll] = useState(false);
+  const [fadeOpen, setFadeOpen] = useState(false);
+  const pendingStepRef = useRef(null);
+  const pendingActionRef = useRef(null);
 
   useEffect(() => {
     const forceTop = !!location?.state?.forceTop;
@@ -49,6 +54,7 @@ export default function RecommendSake() {
         sessionStorage.removeItem("recommendStep");
         sessionStorage.removeItem("recommendAnswers");
         sessionStorage.removeItem("recommendResults");
+
         sessionStorage.removeItem("recommendScrollContainer");
         sessionStorage.removeItem("recommendScrollTop_stage");
         sessionStorage.removeItem("recommendScrollTop_window");
@@ -58,6 +64,9 @@ export default function RecommendSake() {
       setAnswers({});
       setResults([]);
       setPendingRestoreScroll(false);
+      pendingStepRef.current = null;
+      pendingActionRef.current = null;
+      setFadeOpen(false);
       setStep(1);
       return;
     }
@@ -208,10 +217,11 @@ export default function RecommendSake() {
     },
   ];
 
-  // 質問画面
-  if (step === 1) {
-    return (
-      <Stage>
+  if (step !== 1 && step !== 2) return null;
+
+  return (
+    <Stage showScene={step === 1}>
+      {step === 1 ? (
         <MultiStepQuestionnaire
           questions={questions}
           introText="いらっしゃいませ"
@@ -267,40 +277,52 @@ export default function RecommendSake() {
             } catch {
               // ignore
             }
-            setStep(2);
+
+            pendingStepRef.current = 2;
+            pendingActionRef.current = null;
+            setFadeOpen(true);
           }}
         />
-      </Stage>
-    );
-  }
-
-  // 結果一覧画面
-  if (step === 2) {
-    return (
-      <Stage showScene={false}>
+      ) : (
         <RecommendResultList
           answers={answers}
           results={results}
           allData={allData}
           onBack={() => {
-            try {
-              sessionStorage.removeItem("recommendStep");
-              sessionStorage.removeItem("recommendAnswers");
-              sessionStorage.removeItem("recommendResults");
-              sessionStorage.removeItem("recommendScrollContainer");
-              sessionStorage.removeItem("recommendScrollTop_stage");
-              sessionStorage.removeItem("recommendScrollTop_window");
-            } catch {
-              // ignore
-            }
-            setStep(1);
+            pendingStepRef.current = 1;
+            pendingActionRef.current = () => {
+              try {
+                sessionStorage.removeItem("recommendStep");
+                sessionStorage.removeItem("recommendAnswers");
+                sessionStorage.removeItem("recommendResults");
+                sessionStorage.removeItem("recommendScrollContainer");
+                sessionStorage.removeItem("recommendScrollTop_stage");
+                sessionStorage.removeItem("recommendScrollTop_window");
+              } catch {
+                // ignore
+              }
+            };
+            setFadeOpen(true);
           }}
         />
-      </Stage>
-    );
-  }
+      )}
 
-  return null;
+      <FadeOverlay
+        open={fadeOpen}
+        mode="outIn"
+        duration={600}
+        onFadeOutComplete={() => {
+          if (pendingStepRef.current != null) setStep(pendingStepRef.current);
+          if (typeof pendingActionRef.current === "function") pendingActionRef.current();
+        }}
+        onComplete={() => {
+          pendingStepRef.current = null;
+          pendingActionRef.current = null;
+          setFadeOpen(false);
+        }}
+      />
+    </Stage>
+  );
 }
 
 // 簡易スコアリング例（実際は要調整）

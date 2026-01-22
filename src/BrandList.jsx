@@ -9,6 +9,7 @@ export default function BrandList() {
   const location = useLocation();
   const [brands, setBrands] = useState([]);
   const [breweries, setBreweries] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [query, setQuery] = useState(() => {
     const fromNav = location?.state?.brandListQuery;
     if (typeof fromNav === "string") return fromNav;
@@ -17,10 +18,22 @@ export default function BrandList() {
   });
 
   useEffect(() => {
-    fetchAllSakeData({ includeFlavorCharts: false }).then(data => {
-      setBrands(Array.isArray(data?.brands) ? data.brands : []);
-      setBreweries(Array.isArray(data?.breweries) ? data.breweries : []);
-    });
+    let canceled = false;
+    setIsLoading(true);
+    fetchAllSakeData({ includeFlavorCharts: false })
+      .then(data => {
+        if (canceled) return;
+        setBrands(Array.isArray(data?.brands) ? data.brands : []);
+        setBreweries(Array.isArray(data?.breweries) ? data.breweries : []);
+      })
+      .finally(() => {
+        if (canceled) return;
+        setIsLoading(false);
+      });
+
+    return () => {
+      canceled = true;
+    };
   }, []);
 
   useEffect(() => {
@@ -93,12 +106,14 @@ export default function BrandList() {
               />
             </div>
             <ul className="brand-list brand-list-big menu-list">
-              {filteredBrands.length === 0 ? (
+              {isLoading ? (
+                <li className="brand-empty">読み込み中...</li>
+              ) : filteredBrands.length === 0 ? (
                 <li className="brand-empty">該当する銘柄がありません</li>
               ) : (
                 filteredBrands.map(brand => (
                   <li key={brand.id}>
-                    <Link to={`/brand/${brand.id}`} onClick={saveScroll}>
+                    <Link to={`/brand/${brand.id}`} state={{ brandListQuery: query }} onClick={saveScroll}>
                       {brand.name}
                     </Link>
                   </li>

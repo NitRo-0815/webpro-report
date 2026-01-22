@@ -785,3 +785,27 @@ h1 {
 .result-link:hover {
   text-decoration: underline;
 }
+
+.fade-overlay {
+  position: fixed;
+  inset: 0;
+  background: #000;
+  transition-property: opacity;
+  transition-timing-function: ease;
+  pointer-events: auto;
+}
+
+.simple-loading-overlay {
+  position: fixed;
+  inset: 0;
+  background: #000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  z-index: 10000;
+}
+
+.simple-loading-text {
+  font-size: 22px;
+}

@@ -1,12 +1,56 @@
-import React from "react";
-import { Routes, Route, Link } from "react-router-dom";
+import React, { useEffect, useRef, useState } from "react";
+import { Routes, Route, Link, useLocation } from "react-router-dom";
 import RecommendSake from "./RecommendSake.jsx";
 import BrandDetail from "./BrandDetail.jsx";
 import BrandList from "./BrandList.jsx";
 import BreweryBrandList from "./BreweryBrandList.jsx";
+import FadeOverlay from "./FadeOverlay.jsx";
+import SimpleLoadingOverlay from "./SimpleLoadingOverlay.jsx";
 import logoImg from "./images/logo.png";
 
 export default function App() {
+  const location = useLocation();
+  const [bootLoading, setBootLoading] = useState(true);
+  const [bootProgress, setBootProgress] = useState(0);
+  const [displayLocation, setDisplayLocation] = useState(location);
+  const [fadeOpen, setFadeOpen] = useState(false);
+  const pendingLocationRef = useRef(null);
+
+  useEffect(() => {
+    let p = 0;
+    setBootProgress(0);
+    setBootLoading(true);
+
+    const id = setInterval(() => {
+      const next = Math.min(100, p + Math.floor(3 + Math.random() * 7));
+      p = next;
+      setBootProgress(next);
+      if (next >= 100) {
+        clearInterval(id);
+        setBootLoading(false);
+      }
+    }, 80);
+
+    return () => {
+      clearInterval(id);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (location.key === displayLocation.key) return;
+
+    const disableRouteFade = !!location?.state?.disableRouteFade;
+    if (disableRouteFade) {
+      pendingLocationRef.current = null;
+      setFadeOpen(false);
+      setDisplayLocation(location);
+      return;
+    }
+
+    pendingLocationRef.current = location;
+    if (!fadeOpen) setFadeOpen(true);
+  }, [displayLocation.key, fadeOpen, location]);
+
   // const downloadClusterCsv = () => {
   //   try {
   //     const csv = sessionStorage.getItem("precheckClusterCsv");
@@ -58,7 +102,7 @@ export default function App() {
       </header>
 
       <div className="app-main">
-        <Routes>
+        <Routes location={displayLocation}>
           <Route path="/" element={<RecommendSake />} />
           <Route path="/brands" element={<BrandList />} />
           <Route path="/brand/:id" element={<BrandDetail />} />
@@ -69,6 +113,23 @@ export default function App() {
       <footer className="app-footer">
         本サイトは <a href="https://sakenowa.com">さけのわデータ</a> を利用しています。
       </footer>
+
+      <FadeOverlay
+        open={fadeOpen}
+        mode="outIn"
+        duration={600}
+        onFadeOutComplete={() => {
+          if (pendingLocationRef.current) {
+            setDisplayLocation(pendingLocationRef.current);
+          }
+        }}
+        onComplete={() => {
+          pendingLocationRef.current = null;
+          setFadeOpen(false);
+        }}
+      />
+
+      {bootLoading && <SimpleLoadingOverlay progress={bootProgress} />}
     </div>
   );
 }
