@@ -45,7 +45,16 @@ export default function RecommendResultList({ answers, results, allData, onBack 
               {results.length === 0 && <li>該当するお酒がありませんでした</li>}
               {results.map(sake => (
                 <li key={sake.id}>
-                  <Link to={`/brand/${sake.id}`} onClick={saveScroll}>
+                  <Link
+                    to={`/brand/${sake.id}`}
+                    state={{
+                      backTo: {
+                        pathname: "/",
+                        state: { restoreRecommend: true },
+                      },
+                    }}
+                    onClick={saveScroll}
+                  >
                     {sake.name}
                   </Link>
                 </li>

@@ -113,7 +113,19 @@ export default function BrandList() {
               ) : (
                 filteredBrands.map(brand => (
                   <li key={brand.id}>
-                    <Link to={`/brand/${brand.id}`} state={{ brandListQuery: query }} onClick={saveScroll}>
+                    <Link
+                      to={`/brand/${brand.id}`}
+                      state={{
+                        backTo: {
+                          pathname: "/brands",
+                          state: {
+                            brandListQuery: query,
+                            disableRouteFade: true,
+                          },
+                        },
+                      }}
+                      onClick={saveScroll}
+                    >
                       {brand.name}
                     </Link>
                   </li>

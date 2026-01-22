@@ -19,18 +19,21 @@ export default function BrandDetail() {
   const [userVector, setUserVector] = useState(() => loadUserPreferenceVector() ?? initUserVector(6, 0.5));
 
   const goBackToList = () => {
-    let q = location?.state?.brandListQuery;
-    if (typeof q !== "string") {
-      try {
-        q = sessionStorage.getItem("brandListQuery") ?? "";
-      } catch {
-        q = "";
-      }
+    const backTo = location?.state?.backTo;
+    if (backTo && typeof backTo === "object" && typeof backTo.pathname === "string") {
+      navigate(backTo.pathname, {
+        state: backTo.state,
+      });
+      return;
+    }
+
+    if (window.history.length > 1) {
+      navigate(-1);
+      return;
     }
 
     navigate("/brands", {
       state: {
-        brandListQuery: q,
         disableRouteFade: true,
       },
     });
@@ -89,7 +92,7 @@ export default function BrandDetail() {
     <div className="brand-detail-page">
       <div className="brand-detail-panel">
         <button className="nav-btn nav-btn-black brand-detail-back-fixed" type="button" onClick={goBackToList}>
-          ← 一覧に戻る
+          ← 戻る
         </button>
         <h2>{brand.name}</h2>
         <p>

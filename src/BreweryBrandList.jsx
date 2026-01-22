@@ -51,7 +51,19 @@ export default function BreweryBrandList() {
               ) : (
                 filtered.map(brand => (
                   <li key={brand.id}>
-                    <Link to={`/brand/${brand.id}`}>{brand.name}</Link>
+                    <Link
+                      to={`/brand/${brand.id}`}
+                      state={{
+                        backTo: {
+                          pathname: `/brewery/${id}`,
+                          state: {
+                            disableRouteFade: true,
+                          },
+                        },
+                      }}
+                    >
+                      {brand.name}
+                    </Link>
                   </li>
                 ))
               )}
