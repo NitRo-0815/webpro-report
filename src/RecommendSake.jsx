@@ -1,18 +1,153 @@
 import React, { useEffect, useState } from "react";
+import { useLocation } from "react-router-dom";
 import MultiStepQuestionnaire from "./MultiStepQuestionnaire.jsx";
 import RecommendResultList from "./RecommendResultList.jsx";
+import Stage from "./Stage.jsx";
 import { buildBrandVectors } from "./utils/flavorVector.js";
 import { kmeans } from "./utils/kmeans.js";
-import { recommendAllFromCluster } from "./utils/recommend.js";
+import { recommendAllFromCluster, userVectorFromAnswers } from "./utils/recommend.js";
 import { fetchAllSakeData } from "./utils/api.js";
+import { saveUserPreferenceVector } from "./utils/preferenceStorage.js";
+
+// function toPrecheckCsv({ brands, points, assignments }) {
+//   const brandById = new Map((Array.isArray(brands) ? brands : []).map(b => [String(b.id), b]));
+//   const header = ["id", "name", "cluster", "feat_0", "feat_1", "feat_2", "feat_3", "feat_4", "feat_5"].join(",");
+//   const lines = [header];
+//
+//   for (let i = 0; i < points.length; i++) {
+//     const p = points[i];
+//     const brand = brandById.get(String(p.id));
+//     const name = brand?.name ?? "";
+//     const cluster = assignments?.[i] ?? -1;
+//     const v = Array.isArray(p?.vector) ? p.vector : [];
+//     const feats = [0, 1, 2, 3, 4, 5].map(idx => {
+//       const n = Number(v[idx]);
+//       return Number.isFinite(n) ? String(n) : "";
+//     });
+//
+//     const esc = s => `"${String(s).replaceAll('"', '""')}"`;
+//     lines.push([esc(p.id), esc(name), String(cluster), ...feats].join(","));
+//   }
+//
+//   return lines.join("\n");
+// }
 
 export default function RecommendSake() {
+  const location = useLocation();
   const [step, setStep] = useState(1);
   const [answers, setAnswers] = useState({});
   const [results, setResults] = useState([]);
   const [allData, setAllData] = useState(null);
   const [clusterModel, setClusterModel] = useState(null);
   const [loadingData, setLoadingData] = useState(false);
+  const [pendingRestoreScroll, setPendingRestoreScroll] = useState(false);
+
+  useEffect(() => {
+    const forceTop = !!location?.state?.forceTop;
+    if (forceTop) {
+      try {
+        sessionStorage.removeItem("recommendStep");
+        sessionStorage.removeItem("recommendAnswers");
+        sessionStorage.removeItem("recommendResults");
+        sessionStorage.removeItem("recommendScrollContainer");
+        sessionStorage.removeItem("recommendScrollTop_stage");
+        sessionStorage.removeItem("recommendScrollTop_window");
+      } catch {
+        // ignore
+      }
+      setAnswers({});
+      setResults([]);
+      setPendingRestoreScroll(false);
+      setStep(1);
+      return;
+    }
+
+    const shouldRestoreFromNav = !!location?.state?.restoreRecommend;
+    const savedStep = sessionStorage.getItem("recommendStep");
+    const shouldRestoreFromStorage = savedStep === "2";
+    if (!shouldRestoreFromNav && !shouldRestoreFromStorage) return;
+
+    try {
+      const rawResults = sessionStorage.getItem("recommendResults");
+      const rawAnswers = sessionStorage.getItem("recommendAnswers");
+      const restoredResults = rawResults ? JSON.parse(rawResults) : [];
+      const restoredAnswers = rawAnswers ? JSON.parse(rawAnswers) : {};
+
+      if (Array.isArray(restoredResults)) {
+        setResults(restoredResults);
+        if (restoredAnswers && typeof restoredAnswers === "object") setAnswers(restoredAnswers);
+        setStep(2);
+        setPendingRestoreScroll(true);
+      }
+    } catch {
+      // ignore
+    }
+  }, [location?.key]);
+
+  useEffect(() => {
+    if (!pendingRestoreScroll) return;
+    if (step !== 2) return;
+
+    const container = sessionStorage.getItem("recommendScrollContainer") || "stage";
+    const stageTop = Number(sessionStorage.getItem("recommendScrollTop_stage") ?? "0");
+    const winTop = Number(sessionStorage.getItem("recommendScrollTop_window") ?? "0");
+
+    const restore = () => {
+      const el = document.getElementById("stage-ui");
+      if (container === "window") {
+        if (Number.isFinite(winTop)) window.scrollTo(0, winTop);
+        if (el && Number.isFinite(stageTop)) el.scrollTop = stageTop;
+      } else {
+        if (el && Number.isFinite(stageTop)) el.scrollTop = stageTop;
+        if (Number.isFinite(winTop)) window.scrollTo(0, winTop);
+      }
+    };
+
+    requestAnimationFrame(restore);
+    setTimeout(restore, 50);
+    setTimeout(restore, 250);
+    setPendingRestoreScroll(false);
+  }, [pendingRestoreScroll, step, results.length]);
+
+  useEffect(() => {
+    let cancelled = false;
+    setLoadingData(true);
+
+    (async () => {
+      try {
+        const data = await fetchAllSakeData();
+        if (cancelled) return;
+        setAllData(data);
+
+        const { points } = buildBrandVectors(data?.flavorCharts);
+        if (points.length > 0) {
+          const k = Math.max(2, Math.min(20, Math.round(Math.sqrt(points.length / 2))));
+          const { centroids, assignments } = kmeans(points, k, { maxIterations: 50 });
+          setClusterModel({ points, centroids, assignments, k });
+
+          // try {
+          //   const csv = toPrecheckCsv({ brands: data?.brands, points, assignments });
+          //   sessionStorage.setItem("precheckClusterCsv", csv);
+          // } catch {
+          //   // ignore
+          // }
+        } else {
+          setClusterModel(null);
+        }
+      } catch {
+        if (!cancelled) {
+          setAllData(null);
+          setClusterModel(null);
+        }
+      } finally {
+        if (!cancelled) setLoadingData(false);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const questions = [
     {
@@ -73,98 +208,95 @@ export default function RecommendSake() {
     },
   ];
 
-  useEffect(() => {
-    let cancelled = false;
-    setLoadingData(true);
-
-    (async () => {
-      try {
-        const data = await fetchAllSakeData();
-        if (cancelled) return;
-        setAllData(data);
-
-        const { points } = buildBrandVectors(data?.flavorCharts);
-        if (points.length > 0) {
-          const k = Math.max(2, Math.min(20, Math.round(Math.sqrt(points.length / 2))));
-          const { centroids, assignments } = kmeans(points, k, { maxIterations: 50 });
-          setClusterModel({ points, centroids, assignments, k });
-        } else {
-          setClusterModel(null);
-        }
-      } catch {
-        if (!cancelled) {
-          setAllData(null);
-          setClusterModel(null);
-        }
-      } finally {
-        if (!cancelled) setLoadingData(false);
-      }
-    })();
-
-    return () => {
-      cancelled = true;
-    };
-  }, []);
-
   // 質問画面
   if (step === 1) {
     return (
-      <MultiStepQuestionnaire
-        questions={questions}
-        initialAnswers={answers}
-        onCancel={() => setStep(1)}
-        onComplete={async ans => {
-          setAnswers(ans);
-          let data = allData;
-          let model = clusterModel;
+      <Stage>
+        <MultiStepQuestionnaire
+          questions={questions}
+          introText="いらっしゃいませ"
+          initialAnswers={answers}
+          onCancel={() => setStep(1)}
+          onComplete={async ans => {
+            setAnswers(ans);
 
-          if (!data) {
-            data = await fetchAllSakeData();
-            setAllData(data);
-          }
-
-          if (!model) {
-            const { points } = buildBrandVectors(data?.flavorCharts);
-            if (points.length > 0) {
-              const k = Math.max(2, Math.min(20, Math.round(Math.sqrt(points.length / 2))));
-              const { centroids, assignments } = kmeans(points, k, { maxIterations: 50 });
-              model = { points, centroids, assignments, k };
-              setClusterModel(model);
+            try {
+              saveUserPreferenceVector(userVectorFromAnswers(ans, 6));
+            } catch {
+              // ignore
             }
-          }
+            let data = allData;
+            let model = clusterModel;
 
-          let nextResults = [];
-          if (model?.points?.length > 0 && Array.isArray(data?.brands)) {
-            const rec = recommendAllFromCluster({
-              answers: ans,
-              brands: data.brands,
-              points: model.points,
-              centroids: model.centroids,
-              assignments: model.assignments,
-            });
-            nextResults = rec.results;
-          }
+            if (!data) {
+              data = await fetchAllSakeData();
+              setAllData(data);
+            }
 
-          if (nextResults.length === 0) {
-            nextResults = recommendSakes(ans, data);
-          }
+            if (!model) {
+              const { points } = buildBrandVectors(data?.flavorCharts);
+              if (points.length > 0) {
+                const k = Math.max(2, Math.min(20, Math.round(Math.sqrt(points.length / 2))));
+                const { centroids, assignments } = kmeans(points, k, { maxIterations: 50 });
+                model = { points, centroids, assignments, k };
+                setClusterModel(model);
+              }
+            }
 
-          setResults(nextResults);
-          setStep(2);
-        }}
-      />
+            let nextResults = [];
+            if (model?.points?.length > 0 && Array.isArray(data?.brands)) {
+              const rec = recommendAllFromCluster({
+                answers: ans,
+                brands: data.brands,
+                points: model.points,
+                centroids: model.centroids,
+                assignments: model.assignments,
+              });
+              nextResults = rec.results;
+            }
+
+            if (nextResults.length === 0) {
+              nextResults = recommendSakes(ans, data);
+            }
+
+            setResults(nextResults);
+            try {
+              sessionStorage.setItem("recommendStep", "2");
+              sessionStorage.setItem("recommendAnswers", JSON.stringify(ans ?? {}));
+              sessionStorage.setItem("recommendResults", JSON.stringify(nextResults ?? []));
+            } catch {
+              // ignore
+            }
+            setStep(2);
+          }}
+        />
+      </Stage>
     );
   }
 
   // 結果一覧画面
   if (step === 2) {
     return (
-      <RecommendResultList
-        answers={answers}
-        results={results}
-        allData={allData}
-        onBack={() => setStep(1)}
-      />
+      <Stage showScene={false}>
+        <RecommendResultList
+          answers={answers}
+          results={results}
+          allData={allData}
+          onBack={() => {
+            try {
+              sessionStorage.removeItem("recommendStep");
+              sessionStorage.removeItem("recommendAnswers");
+              sessionStorage.removeItem("recommendResults");
+              sessionStorage.removeItem("recommendScrollContainer");
+              sessionStorage.removeItem("recommendScrollTop_stage");
+              sessionStorage.removeItem("recommendScrollTop_window");
+            } catch {
+              // ignore
+            }
+            setStep(1);
+          }}
+        />
+      </Stage>
     );
   }
 
