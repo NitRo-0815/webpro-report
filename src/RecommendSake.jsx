@@ -10,6 +10,48 @@ import { recommendAllFromCluster, userVectorFromAnswers } from "./utils/recommen
 import { fetchAllSakeData } from "./utils/api.js";
 import { saveUserPreferenceVector } from "./utils/preferenceStorage.js";
 
+const CLUSTER_CACHE_KEY = "recommendClusterModel_v1";
+
+function hashPointIds(points) {
+  let h = 5381;
+  for (const p of Array.isArray(points) ? points : []) {
+    const s = String(p?.id ?? "");
+    for (let i = 0; i < s.length; i++) {
+      h = ((h << 5) + h) ^ s.charCodeAt(i);
+    }
+  }
+  return String(h >>> 0);
+}
+
+function loadCachedClusterModel() {
+  try {
+    const raw = sessionStorage.getItem(CLUSTER_CACHE_KEY);
+    if (!raw) return null;
+    const obj = JSON.parse(raw);
+    if (!obj || typeof obj !== "object") return null;
+    if (!Array.isArray(obj.centroids) || !Array.isArray(obj.assignments)) return null;
+    const k = Number(obj.k);
+    if (!Number.isFinite(k) || k <= 0) return null;
+    const pointsHash = String(obj.pointsHash ?? "");
+    const pointsCount = Number(obj.pointsCount);
+    if (!pointsHash || !Number.isFinite(pointsCount) || pointsCount < 0) return null;
+    return { centroids: obj.centroids, assignments: obj.assignments, k, pointsHash, pointsCount };
+  } catch {
+    return null;
+  }
+}
+
+function saveCachedClusterModel({ centroids, assignments, k, pointsHash, pointsCount }) {
+  try {
+    sessionStorage.setItem(
+      CLUSTER_CACHE_KEY,
+      JSON.stringify({ centroids, assignments, k, pointsHash, pointsCount })
+    );
+  } catch {
+    // ignore
+  }
+}
+
 // function toPrecheckCsv({ brands, points, assignments }) {
 //   const brandById = new Map((Array.isArray(brands) ? brands : []).map(b => [String(b.id), b]));
 //   const header = ["id", "name", "cluster", "feat_0", "feat_1", "feat_2", "feat_3", "feat_4", "feat_5"].join(",");
@@ -130,9 +172,21 @@ export default function RecommendSake() {
 
         const { points } = buildBrandVectors(data?.flavorCharts);
         if (points.length > 0) {
-          const k = Math.max(2, Math.min(20, Math.round(Math.sqrt(points.length / 2))));
-          const { centroids, assignments } = kmeans(points, k, { maxIterations: 50 });
-          setClusterModel({ points, centroids, assignments, k });
+          const pointsHash = hashPointIds(points);
+          const cached = loadCachedClusterModel();
+          if (
+            cached &&
+            cached.pointsHash === pointsHash &&
+            cached.pointsCount === points.length &&
+            cached.assignments.length === points.length
+          ) {
+            setClusterModel({ points, centroids: cached.centroids, assignments: cached.assignments, k: cached.k });
+          } else {
+            const k = Math.max(2, Math.min(20, Math.round(Math.sqrt(points.length / 2))));
+            const { centroids, assignments } = kmeans(points, k, { maxIterations: 50 });
+            setClusterModel({ points, centroids, assignments, k });
+            saveCachedClusterModel({ centroids, assignments, k, pointsHash, pointsCount: points.length });
+          }
 
           // try {
           //   const csv = toPrecheckCsv({ brands: data?.brands, points, assignments });
@@ -246,9 +300,21 @@ export default function RecommendSake() {
             if (!model) {
               const { points } = buildBrandVectors(data?.flavorCharts);
               if (points.length > 0) {
-                const k = Math.max(2, Math.min(20, Math.round(Math.sqrt(points.length / 2))));
-                const { centroids, assignments } = kmeans(points, k, { maxIterations: 50 });
-                model = { points, centroids, assignments, k };
+                const pointsHash = hashPointIds(points);
+                const cached = loadCachedClusterModel();
+                if (
+                  cached &&
+                  cached.pointsHash === pointsHash &&
+                  cached.pointsCount === points.length &&
+                  cached.assignments.length === points.length
+                ) {
+                  model = { points, centroids: cached.centroids, assignments: cached.assignments, k: cached.k };
+                } else {
+                  const k = Math.max(2, Math.min(20, Math.round(Math.sqrt(points.length / 2))));
+                  const { centroids, assignments } = kmeans(points, k, { maxIterations: 50 });
+                  model = { points, centroids, assignments, k };
+                  saveCachedClusterModel({ centroids, assignments, k, pointsHash, pointsCount: points.length });
+                }
                 setClusterModel(model);
               }
             }

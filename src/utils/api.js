@@ -72,35 +72,81 @@ export async function getFlavorCharts() {
   return safeFetchJson("/sakenowa-data/api/flavor-charts");
 }
 
+let lightDataCache = null;
+let lightPromiseCache = null;
+let fullDataCache = null;
+let fullPromiseCache = null;
+
 // API一括取得
 export async function fetchAllSakeData({ includeFlavorCharts = true } = {}) {
-  const requests = [
-    safeFetchJson("/sakenowa-data/api/brands"),
-    safeFetchJson("/sakenowa-data/api/flavor-tags"),
-    safeFetchJson("/sakenowa-data/api/brand-flavor-tags"),
-    safeFetchJson("/sakenowa-data/api/breweries"),
-    safeFetchJson("/sakenowa-data/api/areas"),
-  ];
-
-  if (includeFlavorCharts) {
-    requests.push(safeFetchJson("/sakenowa-data/api/flavor-charts"));
+  if (fullDataCache) return fullDataCache;
+  if (includeFlavorCharts && fullPromiseCache) return fullPromiseCache;
+  if (!includeFlavorCharts) {
+    if (lightDataCache) return lightDataCache;
+    if (lightPromiseCache) return lightPromiseCache;
   }
 
-  const [brandsJson, tagsJson, bfJson, breweriesJson, areasJson, flavorChartsJson] =
-    await Promise.all(requests);
+  const p = (async () => {
+    try {
+      const requests = [
+        safeFetchJson("/sakenowa-data/api/brands"),
+        safeFetchJson("/sakenowa-data/api/flavor-tags"),
+        safeFetchJson("/sakenowa-data/api/brand-flavor-tags"),
+        safeFetchJson("/sakenowa-data/api/breweries"),
+        safeFetchJson("/sakenowa-data/api/areas"),
+      ];
 
-  const brands = normalizeArray(brandsJson, "brands");
-  const tags = normalizeArray(tagsJson, "tags");
-  const brandFlavorTags = normalizeBrandFlavorTags(bfJson);
-  const breweries = normalizeArray(breweriesJson, "breweries");
-  const areas = normalizeArray(areasJson, "areas");
+      if (includeFlavorCharts) {
+        requests.push(safeFetchJson("/sakenowa-data/api/flavor-charts"));
+      }
 
-  return {
-    brands,
-    tags,
-    brandFlavorTags,
-    breweries,
-    areas,
-    flavorCharts: includeFlavorCharts ? flavorChartsJson : null,
-  };
+      const [brandsJson, tagsJson, bfJson, breweriesJson, areasJson, flavorChartsJson] =
+        await Promise.all(requests);
+
+      const brands = normalizeArray(brandsJson, "brands");
+      const tags = normalizeArray(tagsJson, "tags");
+      const brandFlavorTags = normalizeBrandFlavorTags(bfJson);
+      const breweries = normalizeArray(breweriesJson, "breweries");
+      const areas = normalizeArray(areasJson, "areas");
+
+      const result = {
+        brands,
+        tags,
+        brandFlavorTags,
+        breweries,
+        areas,
+        flavorCharts: includeFlavorCharts ? flavorChartsJson : null,
+      };
+
+      if (includeFlavorCharts) {
+        fullDataCache = result;
+        lightDataCache = result;
+      } else {
+        lightDataCache = result;
+      }
+
+      return result;
+    } finally {
+      if (includeFlavorCharts) {
+        fullPromiseCache = null;
+      } else {
+        lightPromiseCache = null;
+      }
+    }
+  })();
+
+  if (includeFlavorCharts) {
+    fullPromiseCache = p;
+  } else {
+    lightPromiseCache = p;
+  }
+
+  return p;
+}
+
+export function clearSakeDataCache() {
+  lightDataCache = null;
+  fullDataCache = null;
+  lightPromiseCache = null;
+  fullPromiseCache = null;
 }

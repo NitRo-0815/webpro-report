@@ -15,6 +15,8 @@ export default function App() {
   const [displayLocation, setDisplayLocation] = useState(location);
   const [fadeOpen, setFadeOpen] = useState(false);
   const pendingLocationRef = useRef(null);
+  const [pwaNeedRefresh, setPwaNeedRefresh] = useState(false);
+  const [pwaUpdateSW, setPwaUpdateSW] = useState(null);
 
   useEffect(() => {
     let p = 0;
@@ -51,27 +53,18 @@ export default function App() {
     if (!fadeOpen) setFadeOpen(true);
   }, [displayLocation.key, fadeOpen, location]);
 
-  // const downloadClusterCsv = () => {
-  //   try {
-  //     const csv = sessionStorage.getItem("precheckClusterCsv");
-  //     if (!csv) {
-  //       alert("クラスタCSVがまだ生成されていません。トップ画面を一度開いてから再実行してください。");
-  //       return;
-  //     }
+  useEffect(() => {
+    const onNeedRefresh = e => {
+      const fn = e?.detail?.updateSW;
+      if (typeof fn === "function") {
+        setPwaUpdateSW(() => fn);
+      }
+      setPwaNeedRefresh(true);
+    };
 
-  //     const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
-  //     const url = URL.createObjectURL(blob);
-  //     const a = document.createElement("a");
-  //     a.href = url;
-  //     a.download = "cluster_dump.csv";
-  //     document.body.appendChild(a);
-  //     a.click();
-  //     a.remove();
-  //     URL.revokeObjectURL(url);
-  //   } catch {
-  //     alert("CSVのダウンロードに失敗しました");
-  //   }
-  // };
+    window.addEventListener("pwa:need-refresh", onNeedRefresh);
+    return () => window.removeEventListener("pwa:need-refresh", onNeedRefresh);
+  }, []);
 
   return (
     <div className="app">
@@ -83,7 +76,10 @@ export default function App() {
             </Link>
           </div>
           <div className="site-header-center">
-            <div className="site-title">あなたのおすすめの日本酒が見つかるサイト</div>
+            <div className="site-title">
+              <span className="site-title-line site-title-line1">あなたにおすすめの日本酒が</span>
+              <span className="site-title-line site-title-line2">見つかるサイト</span>
+            </div>
           </div>
           <div className="site-header-right">
             <nav className="site-nav">
@@ -93,12 +89,50 @@ export default function App() {
               <Link className="site-nav-link" to="/brands">
                 銘柄一覧
               </Link>
+              <button
+                className="site-nav-link"
+                type="button"
+                onClick={() => {
+                  window.location.reload();
+                }}
+              >
+                更新
+              </button>
               {/* <button className="site-nav-link" type="button" onClick={downloadClusterCsv}>
                 クラスタCSV
               </button> */}
             </nav>
           </div>
         </div>
+        {pwaNeedRefresh && (
+          <div className="pwa-update-bar" role="status" aria-live="polite">
+            <div className="pwa-update-text">更新があります</div>
+            <div className="pwa-update-actions">
+              <button
+                className="pwa-update-btn"
+                type="button"
+                onClick={() => {
+                  if (typeof pwaUpdateSW === "function") {
+                    pwaUpdateSW(true);
+                    return;
+                  }
+                  window.location.reload();
+                }}
+              >
+                更新する
+              </button>
+              <button
+                className="pwa-update-btn"
+                type="button"
+                onClick={() => {
+                  setPwaNeedRefresh(false);
+                }}
+              >
+                後で
+              </button>
+            </div>
+          </div>
+        )}
       </header>
 
       <div className="app-main">
@@ -113,6 +147,24 @@ export default function App() {
       <footer className="app-footer">
         本サイトは <a href="https://sakenowa.com">さけのわデータ</a> を利用しています。
       </footer>
+
+      <nav className="mobile-bottom-nav" aria-label="スマホ用ナビゲーション">
+        <Link className="mobile-bottom-nav-link" to="/" state={{ forceTop: true }}>
+          トップ
+        </Link>
+        <Link className="mobile-bottom-nav-link" to="/brands">
+          銘柄一覧
+        </Link>
+        <button
+          className="mobile-bottom-nav-link"
+          type="button"
+          onClick={() => {
+            window.location.reload();
+          }}
+        >
+          更新
+        </button>
+      </nav>
 
       <FadeOverlay
         open={fadeOpen}

@@ -61,7 +61,7 @@ body {
 }
 
 .site-logo {
-  height: 40px;
+  height: 32px;
   width: auto;
   object-fit: contain;
   display: block;
@@ -74,6 +74,13 @@ body {
   font-size: 1.2rem;
   letter-spacing: 0.02em;
   text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.site-title-line {
+  display: inline;
 }
 
 .site-nav {
@@ -352,6 +359,14 @@ h1 {
   margin-bottom: 8px;
 }
 
+.radar-compare .radar-card:first-child .radar-title {
+  display: none;
+}
+
+.radar-compare .radar-card:nth-child(2) .radar-title {
+  color: #b42323;
+}
+
 .radar-chart {
   width: 100%;
   height: auto;
@@ -595,8 +610,8 @@ h1 {
   right: 0;
   transform: translateY(-50%);
   width: min(33vw, 420px);
-  background: rgba(10, 10, 10, 0.62);
-  backdrop-filter: blur(8px);
+  background: rgba(10, 10, 10, 0.72);
+  backdrop-filter: blur(10px);
   border: 2px solid rgba(255, 255, 255, 0.22);
   color: #f3f3f3;
   border-radius: 0;
@@ -808,4 +823,430 @@ h1 {
 
 .simple-loading-text {
   font-size: 22px;
+}
+
+.pwa-update-bar {
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 10px 10px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  background: rgba(255, 255, 255, 0.12);
+  border-top: 1px solid rgba(255, 255, 255, 0.22);
+}
+
+.pwa-update-text {
+  font-size: 0.95rem;
+  letter-spacing: 0.04em;
+}
+
+.pwa-update-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.pwa-update-btn {
+  appearance: none;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  background: rgba(255, 255, 255, 0.08);
+  color: #fff;
+  padding: 8px 10px;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.pwa-update-btn:hover {
+  background: rgba(255, 255, 255, 0.14);
+  border-color: rgba(255, 255, 255, 0.45);
+}
+
+.mobile-bottom-nav {
+  display: none;
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 2500;
+  padding: 10px 10px calc(10px + env(safe-area-inset-bottom));
+  background: rgba(8, 26, 58, 0.96);
+  border-top: 1px solid rgba(255, 255, 255, 0.22);
+  gap: 10px;
+}
+
+.mobile-bottom-nav-link {
+  appearance: none;
+  text-decoration: none;
+  font-family: inherit;
+  color: #fff;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  background: rgba(255, 255, 255, 0.08);
+  padding: 12px 12px;
+  flex: 1;
+  text-align: center;
+  cursor: pointer;
+}
+
+.mobile-bottom-nav-link:hover {
+  background: rgba(255, 255, 255, 0.14);
+  border-color: rgba(255, 255, 255, 0.45);
+}
+
+@media (max-width: 520px) and (orientation: portrait) {
+  html,
+  body {
+    width: 100%;
+    min-width: 100vw;
+    overflow-x: hidden;
+  }
+
+  #root {
+    width: 100%;
+    min-width: 100vw;
+  }
+
+  .app {
+    height: 100dvh;
+    overflow-x: hidden;
+    padding-bottom: 0;
+  }
+
+  .site-header-inner {
+    grid-template-columns: auto 1fr;
+    gap: 10px;
+  }
+
+  .site-header-right {
+    display: none;
+  }
+
+  .site-title {
+    font-size: 1.0rem;
+    text-align: center;
+    white-space: normal;
+    overflow: hidden;
+    text-overflow: clip;
+  }
+
+  .site-title-line {
+    display: block;
+  }
+
+  .app-footer {
+    padding: 10px 12px calc(10px + 64px + env(safe-area-inset-bottom));
+  }
+
+  .mobile-bottom-nav {
+    display: flex;
+  }
+
+  .brands-page {
+    padding: 12px 10px;
+  }
+
+  .menu-frame {
+    width: min(917px, 96vw);
+    margin: 12px auto 18px;
+  }
+
+  .menu-mid-inner {
+    padding: 12px 16px 16px;
+  }
+
+  .menu-top-title-main {
+    font-size: 2.2rem;
+  }
+
+  .menu-top-title-sub {
+    font-size: 1.05rem;
+  }
+
+  .brand-search {
+    font-size: 1.25rem;
+  }
+
+  .menu-list li {
+    font-size: 2.2rem;
+  }
+
+  .brand-detail-page {
+    padding: 12px 10px;
+  }
+
+  .brand-detail-panel {
+    padding: 14px 12px;
+    border-width: 4px;
+  }
+
+  .radar-compare {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    align-items: stretch;
+    flex-wrap: nowrap;
+    overflow-x: hidden;
+    -webkit-overflow-scrolling: auto;
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+  }
+
+  .radar-card {
+    flex: 0 0 auto;
+    min-width: 0;
+    max-width: 100%;
+    width: 100%;
+    box-sizing: border-box;
+  }
+
+  .radar-chart {
+    display: block;
+    width: 100%;
+    max-width: 100%;
+    height: auto;
+  }
+
+  .brand-detail-back-fixed {
+    position: sticky;
+    top: 10px;
+    right: auto;
+    margin-left: auto;
+    display: block;
+  }
+
+  .stage-ui {
+    padding: 12px 12px 18px;
+    box-sizing: border-box;
+    overflow-x: hidden;
+  }
+
+  .app-main {
+    width: 100%;
+    min-width: 100vw;
+    overflow-x: hidden;
+    min-height: 0;
+  }
+
+  .stage {
+    width: 100%;
+    min-width: 100vw;
+    height: 100%;
+    min-height: 0;
+  }
+
+  .stage-scene {
+    width: 100%;
+    min-width: 100vw;
+  }
+
+  .stage-layer {
+    width: 100%;
+    min-width: 100vw;
+    object-fit: cover;
+    object-position: center;
+  }
+
+  .stage-layer-master {
+    object-position: center 18%;
+  }
+
+  .question-card {
+    padding: 14px;
+    border-radius: 10px;
+  }
+
+  .question-step {
+    margin-bottom: 6px;
+    font-size: 0.88em;
+  }
+
+  .question-title {
+    font-size: 1.15em;
+    line-height: 1.35;
+  }
+
+  .question-nav {
+    margin-top: 10px;
+    gap: 6px;
+  }
+
+  .nav-btn {
+    padding: 10px 12px;
+  }
+
+  .answer-window {
+    padding: 14px;
+    min-height: 160px;
+  }
+
+  .options-grid {
+    gap: 8px;
+  }
+
+  .option-btn {
+    padding: 12px 12px;
+    font-size: 1.0em;
+    line-height: 1.35;
+  }
+
+  .dialogue-box {
+    position: static;
+    left: auto;
+    right: auto;
+    bottom: auto;
+    width: 100%;
+    height: auto;
+    padding: 12px 12px;
+    display: flex;
+    flex-direction: column;
+    order: 3;
+  }
+
+  .dialogue-header {
+    padding: 0 0 8px;
+    order: 1;
+  }
+
+  .dialogue-text {
+    font-size: 1.0em;
+    line-height: 1.45;
+    margin-top: 8px;
+    margin-bottom: 6px;
+    order: 2;
+    overflow: hidden;
+  }
+
+  .dialogue-layout {
+    height: 100%;
+    padding: 10px 12px;
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    gap: 8px;
+    overflow-x: hidden;
+  }
+
+  .choices-panel {
+    position: static;
+    top: auto;
+    right: auto;
+    transform: none;
+    width: 100%;
+    max-width: 100%;
+    margin: 0;
+    padding: 0;
+    max-height: none;
+    overflow: visible;
+    background: rgba(10, 10, 10, 0.72);
+    border: none;
+    box-shadow: none;
+    backdrop-filter: blur(10px);
+    text-align: center;
+    order: 2;
+  }
+
+  .choices-panel .options-grid {
+    gap: 8px;
+    justify-items: stretch;
+  }
+
+  .choices-panel .option-btn {
+    padding: 12px 12px;
+    font-size: 1.0em;
+    line-height: 1.25;
+    text-align: center;
+  }
+}
+
+@media (orientation: landscape) and (max-height: 520px) {
+  .site-header-inner {
+    padding: 6px 6px;
+    gap: 10px;
+  }
+
+  .site-logo {
+    height: 26px;
+    max-width: 120px;
+  }
+
+  .site-title {
+    font-size: 0.95rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .stage-layer-master {
+    object-position: center;
+  }
+
+  .dialogue-text {
+    font-size: 1.05em;
+    line-height: 1.45;
+    padding: 10px 12px;
+  }
+
+  .app-main {
+    min-height: calc(100vh - 54px);
+  }
+
+  .brands-page {
+    padding: 12px 10px;
+    min-height: calc(100vh - 54px);
+  }
+
+  .menu-frame {
+    width: min(920px, 96vw);
+    margin: 8px auto 16px;
+  }
+
+  .menu-mid-inner {
+    padding: 10px 18px 14px;
+  }
+
+  .menu-top-title-main {
+    font-size: 2.0rem;
+  }
+
+  .menu-top-title-sub {
+    font-size: 1.0rem;
+    margin-top: 6px;
+  }
+
+  .brand-search {
+    padding: 10px 12px;
+    font-size: 1.2rem;
+  }
+
+  .menu-list li {
+    margin: 10px 0;
+    font-size: 2.0rem;
+    line-height: 1.35;
+  }
+
+  .menu-mid-inner .brand-list-big li {
+    font-size: 2.2rem;
+  }
+
+  .brand-detail-page {
+    padding: 12px 10px;
+  }
+
+  .brand-detail-panel {
+    width: min(980px, calc(100% - 16px));
+    padding: 14px 12px;
+  }
+
+  .brand-detail-back-fixed {
+    top: 58px;
+    right: 12px;
+  }
+
+  .radar-compare {
+    gap: 12px;
+    margin-top: 12px;
+  }
 }
