@@ -951,6 +951,46 @@ h1 {
     margin: 12px auto 18px;
   }
 
+  .recommend-result-page .menu-frame,
+  .brand-list-page .menu-frame {
+    min-height: calc(100vh - 54px);
+    min-height: calc(100dvh - 54px);
+  }
+
+  .recommend-result-page .menu-mid,
+  .brand-list-page .menu-mid {
+    flex: 1 1 auto;
+    min-height: 0;
+  }
+
+  .recommend-result-page .menu-frame {
+    width: 100%;
+    max-width: min(917px, 96vw);
+    margin-left: auto;
+    margin-right: auto;
+    box-sizing: border-box;
+  }
+
+  .recommend-result-page .menu-mid-inner {
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+    padding-bottom: calc(16px + 64px + env(safe-area-inset-bottom));
+  }
+
+  .brand-list-page .menu-mid-inner {
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+    padding-bottom: calc(16px + 64px + env(safe-area-inset-bottom));
+  }
+
+  .recommend-result-page .menu-bottom-wrap,
+  .brand-list-page .menu-bottom-wrap {
+    margin-top: auto;
+    transform: translateY(-140px);
+  }
+
   .menu-mid-inner {
     padding: 12px 16px 16px;
   }

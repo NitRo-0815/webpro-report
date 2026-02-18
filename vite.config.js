@@ -7,7 +7,7 @@ export default defineConfig({
     react(),
     VitePWA({
       registerType: 'prompt',
-      includeAssets: [],
+      includeAssets: ['images/icon-192.png', 'images/icon-512.png'],
       manifest: {
         name: 'Sake App',
         short_name: 'Sake',
@@ -19,14 +19,14 @@ export default defineConfig({
         background_color: '#000000',
         icons: [
           {
-            src: '/pwa-192.svg',
+            src: '/images/icon-192.png',
             sizes: '192x192',
-            type: 'image/svg+xml',
+            type: 'image/png',
           },
           {
-            src: '/pwa-512.svg',
+            src: '/images/icon-512.png',
             sizes: '512x512',
-            type: 'image/svg+xml',
+            type: 'image/png',
           },
         ],
       },

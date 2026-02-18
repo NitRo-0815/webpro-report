@@ -21,7 +21,7 @@ export default function RecommendResultList({ answers, results, allData, onBack 
   };
 
   return (
-    <div className="brands-page">
+    <div className="brands-page recommend-result-page">
       <button className="nav-btn menu-fixed-back" onClick={onBack} type="button">
         トップに戻る
       </button>

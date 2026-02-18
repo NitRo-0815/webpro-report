@@ -78,7 +78,7 @@ export default function BrandList() {
   };
 
   return (
-    <div className="brands-page">
+    <div className="brands-page brand-list-page">
       <div className="menu-frame">
         <div className="menu-top-wrap">
           <img className="menu-top" src={menuTopImg} alt="" />
